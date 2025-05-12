@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div id="section1">
+
+    <div class="container mt-5 pt-5">
+        <form action="" method="post">
+            {% for question in questions %}
+
+            {% csrf_token %}
+            <p>Q.{{forloop.counter}} {{question.question}}</p>
+            <input type="hidden" name="question{{forloop.counter}}" value="{{question.pk}}">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="q{{forloop.counter}}o" id="q{{forloop.counter}}o1"
+                    value="{{question.option_one}}">
+                {{question.option_one}}
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="q{{forloop.counter}}o" id="q{{forloop.counter}}o2"
+                    value="{{question.option_two}}">
+                {{question.option_two}}
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="q{{forloop.counter}}o" id="q{{forloop.counter}}o3"
+                    value="{{question.option_three}}">
+                {{question.option_three}}
+                </label>
+            </div>
+            <div class="form-check lower-radio">
+                <input class="form-check-input" type="radio" name="q{{forloop.counter}}o" id="q{{forloop.counter}}o4"
+                    value="{{question.option_four}}">
+                {{question.option_four}}
+                </label>
+            </div>
+            <div>{% include 'messages.html' %}</div>
+            <hr>
+            {% endfor %}
+            <input class="btn btn-primary check-btn" type="submit" value="Finish" />
+        </form>
+    </div>
+</div>
+
+{% endblock content %}

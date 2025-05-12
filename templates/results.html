@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div id="section1">
+    <div class="align-items-center">{% include 'messages.html' %}</div>
+
+    <div class="container mt-5 pt-5">
+        <h1 class="text-center">
+            Result
+        </h1>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Total Questions</th>
+                    <th scope="col">Correct</th>
+                    <th scope="col">Total Marks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                <tr>
+                    <th scope="row">{{ forloop.counter }}</th>
+                    <td>{{ result.total }}</td>
+                    <td>{{ result.got }}</td>
+                    <td>{{ result.got }}/{{ result.total }}</td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+
+
+        </table>
+        <div class="text-center" id="average-score">Average Score: {{ average_score }} %</div>
+    </div>
+</div>
+
+{% endblock content %}

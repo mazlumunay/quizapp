@@ -3,42 +3,53 @@
 {% block content %}
 
 <div id="section1">
-
     <div class="container mt-5 pt-5">
         <form action="" method="post">
-            {% for question in questions %}
-
             {% csrf_token %}
-            <p>Q.{{forloop.counter}} {{question.question}}</p>
-            <input type="hidden" name="question{{forloop.counter}}" value="{{question.pk}}">
-            <div class="form-check">
-                <input class="form-check-input" type="radio" name="q{{forloop.counter}}o" id="q{{forloop.counter}}o1"
-                    value="{{question.option_one}}">
-                {{question.option_one}}
-                </label>
+            {% for question in questions %}
+            <div class="question-block mb-4">
+                <p class="question-text"><strong>Q.{{forloop.counter}} {{question.question}}</strong></p>
+                <input type="hidden" name="question{{forloop.counter}}" value="{{question.pk}}">
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="q{{forloop.counter}}o" 
+                           id="q{{forloop.counter}}o1" value="{{question.option_one}}">
+                    <label class="form-check-label" for="q{{forloop.counter}}o1">
+                        {{question.option_one}}
+                    </label>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="q{{forloop.counter}}o" 
+                           id="q{{forloop.counter}}o2" value="{{question.option_two}}">
+                    <label class="form-check-label" for="q{{forloop.counter}}o2">
+                        {{question.option_two}}
+                    </label>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="q{{forloop.counter}}o" 
+                           id="q{{forloop.counter}}o3" value="{{question.option_three}}">
+                    <label class="form-check-label" for="q{{forloop.counter}}o3">
+                        {{question.option_three}}
+                    </label>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="q{{forloop.counter}}o" 
+                           id="q{{forloop.counter}}o4" value="{{question.option_four}}">
+                    <label class="form-check-label" for="q{{forloop.counter}}o4">
+                        {{question.option_four}}
+                    </label>
+                </div>
             </div>
-            <div class="form-check">
-                <label class="form-check-label" for="q{{forloop.counter}}o1">
-                    <input class="form-check-input" type="radio" name="q{{forloop.counter}}o" id="q{{forloop.counter}}o1" value="{{question.option_one}}">
-                    {{question.option_one}}
-                </label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" name="q{{forloop.counter}}o" id="q{{forloop.counter}}o3"
-                    value="{{question.option_three}}">
-                {{question.option_three}}
-                </label>
-            </div>
-            <div class="form-check lower-radio">
-                <input class="form-check-input" type="radio" name="q{{forloop.counter}}o" id="q{{forloop.counter}}o4"
-                    value="{{question.option_four}}">
-                {{question.option_four}}
-                </label>
-            </div>
-            <div>{% include 'messages.html' %}</div>
             <hr>
             {% endfor %}
-            <input class="btn btn-primary check-btn" type="submit" value="Finish" />
+            
+            <div class="text-center mt-4">
+                {% include 'messages.html' %}
+                <input class="btn btn-primary btn-lg" type="submit" value="Finish Quiz" />
+            </div>
         </form>
     </div>
 </div>

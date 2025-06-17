@@ -61,3 +61,5 @@ class Result(models.Model):
         else:
             self.score_percentage = 0.0
         return self.score_percentage
+    
+    

@@ -1,76 +1,98 @@
 from django.shortcuts import render, redirect
-from .models import Question, Result
+from django.views import View
 from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from django.contrib import messages
+from django.db.models import Avg
+from .models import Question, Result
+import random
 
 
-# Views for quiz functionality
+@method_decorator(login_required, name='dispatch')
+class IndexView(View):
+    """Main quiz index page."""
+    
+    def get(self, request):
+        """Display the quiz start page."""
+        return render(request, 'quiz/index.html')
 
-@login_required(login_url='/login/')
-def index_page(request):
-    """
-    View for displaying the quiz questions and handling quiz submission.
 
-    GET: Renders the quiz page with randomly selected questions.
-    POST: Processes the submitted quiz answers, calculates the result, and redirects to the result page.
-    """
-    questions = Question.objects.order_by('?')[:5]
-    context = {'questions': questions}
-
-    if request.method == "GET":
+@method_decorator(login_required, name='dispatch')
+class QuizView(View):
+    """Main quiz taking functionality."""
+    
+    def get(self, request):
+        """Display quiz questions."""
+        # Get 5 random questions
+        questions = Question.objects.order_by('?')[:5]
+        
+        if not questions.exists():
+            messages.error(request, 'No questions available. Please contact administrator.')
+            return redirect('index_page')
+        
+        # Store question IDs in session for validation
+        request.session['quiz_questions'] = list(questions.values_list('id', flat=True))
+        
+        context = {
+            'questions': questions
+        }
         return render(request, 'quiz.html', context)
-
-    if request.method == "POST":
-        questions_id = []
-        answers_given = []
-        correct_answer = 0
-        # Collect answers and corresponding question IDs
-        for i in range(1, 6):
-            questions_id.append(int(request.POST.get(f'question{i}')))
-            answers_given.append(request.POST.get(f'q{i}o'))
-
-        # Check answers and calculate correct answers
-        for i in range(len(questions_id)):
-            question = Question.objects.get(id=questions_id[i])
-            if question.answer == answers_given[i]:
-                correct_answer += 1
-
-        # Save result to database
-        result = Result(user=request.user)
-        result.total = 5
-        result.got = correct_answer
+    
+    def post(self, request):
+        """Process quiz submission."""
+        quiz_questions = request.session.get('quiz_questions', [])
+        
+        if not quiz_questions:
+            messages.error(request, 'Invalid quiz session. Please start again.')
+            return redirect('index_page')
+        
+        questions = Question.objects.filter(id__in=quiz_questions)
+        total_questions = questions.count()
+        correct_answers = 0
+        
+        # Check answers
+        for i, question in enumerate(questions, 1):
+            user_answer = request.POST.get(f'q{i}o')
+            if user_answer and user_answer.strip() == question.answer.strip():
+                correct_answers += 1
+        
+        # Save result
+        result = Result.objects.create(
+            user=request.user,
+            total_questions=total_questions,
+            correct_answers=correct_answers
+        )
+        result.calculate_percentage()
         result.save()
-
-        percentage = (correct_answer / 5) * 100
-
-        # Display appropriate message based on the result
-        if correct_answer < 3:
-            messages.error(request, f'{percentage} % Please try again!')
-        elif correct_answer == 3:
-            messages.success(request, f'{percentage} % Good Job!')
-        elif correct_answer == 4:
-            messages.success(request, f'{percentage} % Excellent Work!')
-        else:
-            messages.success(request, f'{percentage} % You are a genius!')
+        
+        # Clear session
+        if 'quiz_questions' in request.session:
+            del request.session['quiz_questions']
+        
+        messages.success(
+            request, 
+            f'Quiz completed! You scored {correct_answers}/{total_questions} '
+            f'({result.score_percentage:.1f}%)'
+        )
+        
         return redirect('result')
 
 
-@login_required(login_url='/login/')
-def result(request):
-    """
-    View for displaying the user's quiz results.
-
-    GET: Renders the results page with the user's quiz history and average score.
-    """
-    if request.method == "GET":
+@method_decorator(login_required, name='dispatch')
+class ResultView(View):
+    """Display quiz results."""
+    
+    def get(self, request):
+        """Show user's quiz results."""
         results = Result.objects.filter(user=request.user)
-        average_score = 0
-        if results:
-            total_attempt = results.count() * 5
-            total_correct = 0
-
-            for result in results:
-                total_correct += result.got
-            average_score = (total_correct / total_attempt) * 100
-
-        return render(request, 'results.html', {"results": results, "average_score": average_score})
+        
+        # Calculate average score
+        average_score = results.aggregate(
+            avg_score=Avg('score_percentage')
+        )['avg_score'] or 0
+        
+        context = {
+            'results': results,
+            'average_score': round(average_score, 1)
+        }
+        return render(request, 'results.html', context)

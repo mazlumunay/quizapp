@@ -1,50 +1,63 @@
 from django.db import models
 from django.contrib.auth.models import User
-
-# Models for quiz questions and user results
+from django.utils import timezone
 
 class Question(models.Model):
-    """
-    Model representing a quiz question.
-
-    Fields:
-    - question: CharField representing the question itself.
-    - answer: CharField representing the correct answer.
-    - option_one: CharField representing the first option.
-    - option_two: CharField representing the second option.
-    - option_three: CharField representing the third option (optional).
-    - option_four: CharField representing the fourth option (optional).
-    - created_at: DateTimeField representing the creation date of the question.
-    - updated_at: DateTimeField representing the last update date of the question.
-    """
-    question = models.CharField(max_length=250)
-    answer = models.CharField(max_length=100)
-    option_one = models.CharField(max_length=100)
-    option_two = models.CharField(max_length=100)
-    option_three = models.CharField(max_length=100, blank=True)
-    option_four = models.CharField(max_length=100, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    """Model for quiz questions with multiple choice options."""
+    
+    question = models.CharField(max_length=500, help_text="The question text")
+    option_one = models.CharField(max_length=200, help_text="First option")
+    option_two = models.CharField(max_length=200, help_text="Second option")
+    option_three = models.CharField(max_length=200, help_text="Third option")
+    option_four = models.CharField(max_length=200, help_text="Fourth option")
+    answer = models.CharField(max_length=200, help_text="Correct answer")
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Question"
+        verbose_name_plural = "Questions"
+
     def __str__(self):
-        return self.question
+        return f"Q: {self.question[:50]}..."
+
+    def get_options(self):
+        """Return all options as a list."""
+        return [self.option_one, self.option_two, self.option_three, self.option_four]
+
 
 class Result(models.Model):
-    """
-    Model representing a user's quiz result.
+    """Model to store quiz results for users."""
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_results')
+    total_questions = models.IntegerField(default=0)
+    correct_answers = models.IntegerField(default=0)
+    score_percentage = models.FloatField(default=0.0)
+    date_taken = models.DateTimeField(default=timezone.now)
 
-    Fields:
-    - user: ForeignKey to User model representing the user who took the quiz.
-    - total: IntegerField representing the total number of questions attempted.
-    - got: IntegerField representing the number of questions answered correctly.
-    - created_at: DateTimeField representing the creation date of the result.
-    - updated_at: DateTimeField representing the last update date of the result.
-    """
-    user = models.ForeignKey(to=User, on_delete=models.CASCADE)
-    total = models.IntegerField(blank=False)
-    got = models.IntegerField(blank=False, default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-date_taken']
+        verbose_name = "Result"
+        verbose_name_plural = "Results"
 
     def __str__(self):
-        return self.user.username
+        return f"{self.user.username} - {self.correct_answers}/{self.total_questions}"
+
+    @property
+    def total(self):
+        """Alias for total_questions for template compatibility."""
+        return self.total_questions
+    
+    @property
+    def got(self):
+        """Alias for correct_answers for template compatibility."""
+        return self.correct_answers
+
+    def calculate_percentage(self):
+        """Calculate and update score percentage."""
+        if self.total_questions > 0:
+            self.score_percentage = (self.correct_answers / self.total_questions) * 100
+        else:
+            self.score_percentage = 0.0
+        return self.score_percentage
